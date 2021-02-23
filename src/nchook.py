@@ -4,14 +4,15 @@ import plistlib
 import pprint
 import logging
 import subprocess
+import os.path
 
 from watchdog.observers.kqueue import KqueueObserver 
 from watchdog.events import FileSystemEventHandler
 
 user_folder = subprocess.run(['getconf', 'DARWIN_USER_DIR'], capture_output=True).stdout.decode("utf-8").strip()
-db_folder = user_folder + "com.apple.notificationcenter/db2"
-db_file = db_folder + "/db"
-watch_file = db_folder + "/db-wal"
+db_folder = os.path.join(user_folder, "com.apple.notificationcenter/db2")
+db_file = os.path.join(db_folder, "db")
+watch_file = os.path.join(db_folder, "db-wal")
 
 db = apsw.Connection(db_file)
 rec_ids = []
