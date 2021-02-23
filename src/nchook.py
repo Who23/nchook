@@ -40,7 +40,7 @@ class DBEventHandler(FileSystemEventHandler):
 
         while True:
             try:
-                new_objs = [(col[0], decode_plist(col[1])) for col in cursor.execute(sql, rec_ids)]
+                new_objs = [(col[0], process_plist(col[1])) for col in cursor.execute(sql, rec_ids)]
                 break
             except apsw.BusyError:
                 time.sleep(1)
@@ -48,21 +48,25 @@ class DBEventHandler(FileSystemEventHandler):
         self.logger.info(f"-- NEW -- : {len(new_objs)}")
         for obj in new_objs:
             rec_ids.append(obj[0])
-            self.logger.info(f"{obj[1]['app']}")
+            self.logger.info(f"{obj[1]}")
 
 
-def decode_plist(raw_plist):
+def process_plist(raw_plist):
     notif_plist = plistlib.loads(raw_plist, fmt=plistlib.FMT_BINARY)
 
-    # try to decode some of the sub-plists, but they might not be there
-    try:
-        notif_plist['req']['nsdict']['di'] = plistlib.loads(notif_plist['req']['nsdict']['di'], fmt=plistlib.FMT_BINARY)
-        notif_plist['req']['usda'] = plistlib.loads(notif_plist['req']['usda'], fmt=plistlib.FMT_BINARY)
-        notif_plist['req']['nsdu'] = plistlib.loads(notif_plist['req']['nsdu'], fmt=plistlib.FMT_BINARY)
-    except:
-        pass
+    processed_notif_dict = {
+            "app": notif_plist["app"], 
+            "title": "",
+            "body": notif_plist["req"]["body"],
+            # the time in the plist is in the Core Data format, convert it to a unix timestamp
+            "time": notif_plist["date"] + 978307200
+    }
 
-    return notif_plist
+    # notifications may not have titles.
+    if "titl" in notif_plist["req"]:
+        processed_notif_dict["title"] = notif_plist["req"]["titl"]
+
+    return processed_notif_dict
 
 
 if __name__ == "__main__":
