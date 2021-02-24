@@ -9,19 +9,13 @@ import os.path
 from watchdog.observers.kqueue import KqueueObserver 
 from watchdog.events import FileSystemEventHandler
 
-user_folder = subprocess.run(['getconf', 'DARWIN_USER_DIR'], capture_output=True).stdout.decode("utf-8").strip()
-db_folder = os.path.join(user_folder, "com.apple.notificationcenter/db2")
-db_file = os.path.join(db_folder, "db")
-watch_file = os.path.join(db_folder, "db-wal")
-
-db = apsw.Connection(db_file)
-rec_ids = []
-
 class DBEventHandler(FileSystemEventHandler):
     """Handles notification DB change events"""
 
-    def __init__(self, logger=None):
+    def __init__(self, db, rec_ids, logger=None):
         super().__init__()
+        self.db = db
+        self.rec_ids = rec_ids
         self.logger = logging.root
 
     def on_moved(self, event):
@@ -35,7 +29,7 @@ class DBEventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         super().on_modified(event)
-        cursor = db.cursor()
+        cursor = self.db.cursor()
         sql = f"SELECT rec_id, data FROM record WHERE rec_id NOT IN ({','.join('?' * len(rec_ids))})" 
 
         while True:
@@ -47,7 +41,7 @@ class DBEventHandler(FileSystemEventHandler):
 
         self.logger.info(f"-- NEW -- : {len(new_objs)}")
         for obj in new_objs:
-            rec_ids.append(obj[0])
+            self.rec_ids.append(obj[0])
             self.logger.info(f"{obj[1]}")
 
 
@@ -73,7 +67,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    event_handler = DBEventHandler()
+
+    darwin_user_folder = subprocess.run(['getconf', 'DARWIN_USER_DIR'], capture_output=True).stdout.decode("utf-8").strip()
+    db_folder = os.path.join(darwin_user_folder, "com.apple.notificationcenter/db2")
+    db_file = os.path.join(db_folder, "db")
+    watch_file = os.path.join(db_folder, "db-wal")
+
+    db = apsw.Connection(db_file)
+    rec_ids = []
+
+    event_handler = DBEventHandler(db, rec_ids)
     observer = KqueueObserver()
     observer.schedule(event_handler, watch_file)
     observer.start()
