@@ -42,7 +42,8 @@ class DBEventHandler(FileSystemEventHandler):
         # the db might be busy so just wait it out.
         while True:
             try:
-                new_objs = [(col[0], process_plist(col[1])) for col in cursor.execute(sql, rec_ids)]
+                new_objs = [(col[0], process_plist(col[1]))
+                            for col in cursor.execute(sql, rec_ids)]
                 break
             except apsw.BusyError:
                 time.sleep(1)
@@ -98,12 +99,7 @@ if __name__ == "__main__":
     # contains notification center db, different for each user so we need to
     # find it every time.
     darwin_user_folder = subprocess.run(
-        ['getconf', 'DARWIN_USER_DIR'],
-        capture_output=True
-    )
-    .stdout
-    .decode("utf-8")
-    .strip()
+        ['getconf', 'DARWIN_USER_DIR'], capture_output=True).stdout.decode("utf-8").strip()
 
     db_folder = os.path.join(
         darwin_user_folder,
