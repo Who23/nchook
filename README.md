@@ -12,5 +12,5 @@ With homebrew:
 Start the nchook daemon with `brew services start nchook`
 
 Create or symlink an executable file at `~/.config/nchook/nchook_script`. This script will
-be run with as `nchook_script APP TITLE BODY TIME`. Note that TIME is a unix timestamp in 
+be run as `nchook_script APP TITLE BODY TIME`. Note that TIME is a unix timestamp in 
 seconds.
