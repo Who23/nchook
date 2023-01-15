@@ -78,17 +78,27 @@ def process_plist(raw_plist):
     notif_plist = plistlib.loads(raw_plist, fmt=plistlib.FMT_BINARY)
 
     processed_notif_dict = {
-        "app": notif_plist["app"],
+        "app": "",
         "title": "",
-        "body": notif_plist["req"]["body"],
-        # the time in the plist is in the Core Data format, convert it to a
-        # unix timestamp
-        "time": notif_plist["date"] + 978307200
+        "body": "",
+        "time": ""
     }
 
-    # notifications may not have titles.
+    # notifications may not have... any fields? Weird bug, 
+    # but better than crashing and burning
+    if "app" in notif_plist:
+        processed_notif_dict["app"] = notif_plist["app"]
+
     if "titl" in notif_plist["req"]:
         processed_notif_dict["title"] = notif_plist["req"]["titl"]
+
+    if "date" in notif_plist:
+        processed_notif_dict["time"] = notif_plist["date"] + 978307200
+
+    # the time in the plist is in the Core Data format, convert it to a
+    # unix timestamp
+    if "body" in notif_plist["req"]:
+        processed_notif_dict["body"] = notif_plist["req"]["body"]
 
     return processed_notif_dict
 
