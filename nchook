@@ -141,8 +141,7 @@ if __name__ == "__main__":
     observer.schedule(event_handler, watch_file)
     observer.start()
     try:
-        while True:
-            time.sleep(1)
+        observer.join()
     finally:
         observer.stop()
         observer.join()
